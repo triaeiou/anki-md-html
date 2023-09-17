@@ -174,6 +174,12 @@ interface Options {
   [MARKDOWN]: MdastToMarkdownOptions
   [EXTENSIONS]: object
 }
+
+const _lists = ['ul', 'ol']
+function is_list(tag: string) {
+  return _lists.includes(tag)
+}
+
 class Converter {
   
   /////////////////////////////////////////////////////////////////////////////
@@ -356,6 +362,13 @@ class Converter {
 
         // phrasing
         if (phrasing(child)) {
+          const last = result[result.length - 1]
+          // Special case: closing cloze after list
+          if (child.type === 'text' && child.value === '}}' && is_list(last?.['tagName'])) {
+            last['children'][last['children'].length - 1]['children'].push({type: 'text', value: '}}'})
+            continue
+          }
+
           // keep building para until after 2+ brs
           if (tag !== 'br' && brs > 1) flush_para()
 
@@ -381,16 +394,12 @@ class Converter {
         else {
           flush_para()
 
-          // Move nested lists inside preceding li
-          if (
-            ['ul', 'ol'].includes(tag) &&
+          if ( // Move nested lists inside preceding li
+            is_list(tag) &&
             result[result.length - 1]?.['tagName'] === 'li'
           ) {
             result[result.length - 1]['children'].push(mutate(child, state))
-          }
-
-          // unhandled, push to result
-          else {
+          } else { // unhandled, push to result
             result.push(mutate(child, state))
           }
         }
@@ -417,7 +426,7 @@ class Converter {
             // the outer list has to be loose in markdown, so do the reverse here (p wrap)
             !state['list'] ||
             brs > 1 ||
-            ['ul', 'ol'].includes(result[result.length - 1]?.['tagName'])
+            is_list(result[result.length - 1]?.['tagName'])
           )
         )
           result.push({
@@ -432,15 +441,15 @@ class Converter {
       }
 
       /** Incr/decr counters of block levels */
-      function update_state(increment: boolean) {
+      function update_state(enter: boolean) {
         if (node['tagName'] === 'table')
-          state['table'] += increment ? 1 : -1
-        else if (['ul', 'ol'].includes(node['tagName']))
-          state['list'] += increment ? 1 : -1
+          state['table'] += enter ? 1 : -1
+        else if (is_list(node['tagName']))
+          state['list'] += enter ? 1 : -1
         else if(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(node['tagName']))
-          state['heading'] += increment ? 1 : -1
+          state['heading'] += enter ? 1 : -1
         else if(node['tagName'] === 'dl')
-          state['deflist'] += increment ? 1 : -1
+          state['deflist'] += enter ? 1 : -1
       }
     }
   }
@@ -535,16 +544,16 @@ class Converter {
       return node
 
       /** Incr/decr counters of block levels */
-      function update_state(increment: boolean) {
+      function update_state(enter: boolean) {
         if (node['tagName'] === 'table') {
-          state['table'] += increment ? 1 : -1
+          state['table'] += enter ? 1 : -1
           if (node['properties']['headless'])
-            state['headless'] += increment ? 1 : -1
+            state['headless'] += enter ? 1 : -1
         }
-        else if (['ul', 'ol'].includes(node['tagName']))
-          state['list'] += increment ? 1 : -1
+        else if (is_list(node['tagName']))
+          state['list'] += enter ? 1 : -1
         else if(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'].includes(node['tagName']))
-          state['heading'] += increment ? 1 : -1
+          state['heading'] += enter ? 1 : -1
       }
     }
   }

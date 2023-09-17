@@ -28,9 +28,14 @@ const DEFAULT_CFG = {
 } as Options
 
 
-const html = 'one:<ul class="markdown-tight"><li>item</li><li>item2<ol class="markdown-tight"><li>n1</li><li>n2</li></ol></li></ul>two'
-const md = 'one:\n- item\n- item2\n    1. n1\n    2. n2\n\ntwo'
+//const html = 'one:<ul class="markdown-tight"><li>item</li><li>item2{{<ol class="markdown-tight"><li>n1</li><li>n2</li></ol>}}</li></ul>two'
+//const md = 'one:\n- item\n- item2\n    1. n1\n    2. n2\n\ntwo'
+const html = 'z{{<ul><li>o<ul><li>i</li></ul></li><li>2</li></ul>}}<br>z'
+const md = 'z\n- o{{\n    - i\n\n    }}\n\nz'
+const converter = new Converter(DEFAULT_CFG)
+console.log(`--------------------------------------\n$${converter.html_to_markdown(html)}\n\nvs\n\n${md}`)
 
+/*
 test('single', (t) => {
   const converter = new Converter(DEFAULT_CFG)
   t.deepEqual(
@@ -42,6 +47,7 @@ test('single', (t) => {
   t.end()
 })
 
+/*
 test('single', (t) => {
   const converter = new Converter(DEFAULT_CFG)
   t.deepEqual(
@@ -52,3 +58,4 @@ test('single', (t) => {
 
   t.end()
 })
+*/
